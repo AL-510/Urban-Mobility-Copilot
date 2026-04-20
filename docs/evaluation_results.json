@@ -1,0 +1,82 @@
+{
+  "stgat": {
+    "metrics": {
+      "h0_auroc": 0.9593,
+      "h0_avg_precision": 0.281,
+      "h0_brier": 0.0025,
+      "h0_delay_mae": 0.4335,
+      "h0_delay_q10_coverage": 0.497,
+      "h0_delay_q50_coverage": 0.5061,
+      "h0_delay_q90_coverage": 0.9041,
+      "h0_ratio_mae": 0.0435,
+      "h1_auroc": 0.9516,
+      "h1_avg_precision": 0.2749,
+      "h1_brier": 0.0022,
+      "h1_delay_mae": 0.4345,
+      "h1_delay_q10_coverage": 0.4971,
+      "h1_delay_q50_coverage": 0.5079,
+      "h1_delay_q90_coverage": 0.903,
+      "h1_ratio_mae": 0.0435,
+      "h2_auroc": 0.9002,
+      "h2_avg_precision": 0.1538,
+      "h2_brier": 0.0028,
+      "h2_delay_mae": 0.4406,
+      "h2_delay_q10_coverage": 0.4961,
+      "h2_delay_q50_coverage": 0.5053,
+      "h2_delay_q90_coverage": 0.903,
+      "h2_ratio_mae": 0.0441,
+      "avg_auroc": 0.937,
+      "avg_avg_precision": 0.2366,
+      "avg_brier": 0.0025,
+      "avg_delay_mae": 0.4362,
+      "avg_ratio_mae": 0.0437
+    },
+    "latency": {
+      "mean_ms": 39.3,
+      "p50_ms": 38.2,
+      "p95_ms": 45.2,
+      "p99_ms": 47.9
+    },
+    "params": 101973
+  },
+  "lstm_baseline": {
+    "metrics": {
+      "h0_auroc": 0.9317,
+      "h0_avg_precision": 0.2004,
+      "h0_brier": 0.0032,
+      "h0_delay_mae": 0.4443,
+      "h0_delay_q10_coverage": 0.4971,
+      "h0_delay_q50_coverage": 0.506,
+      "h0_delay_q90_coverage": 0.9072,
+      "h0_ratio_mae": 0.0443,
+      "h1_auroc": 0.9078,
+      "h1_avg_precision": 0.1922,
+      "h1_brier": 0.003,
+      "h1_delay_mae": 0.4453,
+      "h1_delay_q10_coverage": 0.4941,
+      "h1_delay_q50_coverage": 0.5059,
+      "h1_delay_q90_coverage": 0.9067,
+      "h1_ratio_mae": 0.0443,
+      "h2_auroc": 0.8788,
+      "h2_avg_precision": 0.1361,
+      "h2_brier": 0.0032,
+      "h2_delay_mae": 0.4443,
+      "h2_delay_q10_coverage": 0.4976,
+      "h2_delay_q50_coverage": 0.5097,
+      "h2_delay_q90_coverage": 0.9065,
+      "h2_ratio_mae": 0.0442,
+      "avg_auroc": 0.9061,
+      "avg_avg_precision": 0.1763,
+      "avg_brier": 0.0031,
+      "avg_delay_mae": 0.4446,
+      "avg_ratio_mae": 0.0443
+    },
+    "latency": {
+      "mean_ms": 4.6,
+      "p50_ms": 5.7,
+      "p95_ms": 6.3,
+      "p99_ms": 6.4
+    },
+    "params": 57100
+  }
+}

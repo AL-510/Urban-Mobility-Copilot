@@ -1,0 +1,72 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.egg
+.eggs/
+*.so
+venv/
+.venv/
+env/
+
+# Data — raw/synthetic/vector_store are excluded; processed graph files ARE committed
+data/raw/
+data/synthetic/
+data/vector_store/
+*.h5
+
+# Keep processed graph + weather features (tracked in git)
+# data/processed/ — intentionally NOT excluded
+
+# Models — checkpoint .pt files ARE committed (small: <2MB each)
+# checkpoints/ — intentionally NOT excluded
+*.pth
+*.onnx
+
+# Environment
+.env
+.env.local
+.env.production
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node
+node_modules/
+.next/
+out/
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+
+# Docker
+docker-compose.override.yml
+
+# Logs
+*.log
+logs/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Claude
+.claude/
+
+# Cache
+cache/
+
+# Misc
+nul
+*.bak
+
+# TypeScript build cache
+*.tsbuildinfo

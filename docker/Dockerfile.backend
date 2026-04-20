@@ -1,0 +1,35 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# System dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python dependencies from requirements.txt
+COPY requirements.txt .
+RUN pip install --no-cache-dir \
+    --extra-index-url https://download.pytorch.org/whl/cpu \
+    -r requirements.txt
+
+# Copy source
+COPY src/ src/
+COPY scripts/ scripts/
+COPY pyproject.toml .
+
+# Create data directories
+RUN mkdir -p data/raw data/processed data/synthetic data/vector_store checkpoints
+
+# Env defaults (overridden at runtime via .env or docker env)
+ENV API_HOST=0.0.0.0
+ENV API_PORT=8000
+ENV QDRANT_HOST=qdrant
+ENV QDRANT_PORT=6333
+
+EXPOSE 8000
+
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
+    CMD python -c "import httpx; httpx.get('http://localhost:8000/health').raise_for_status()"
+
+CMD ["uvicorn", "src.api.app:app", "--host", "0.0.0.0", "--port", "8000"]
