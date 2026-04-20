@@ -4,10 +4,13 @@ import logging
 from datetime import datetime
 
 from qdrant_client.http.models import FieldCondition, Filter, MatchValue, Range
-from sentence_transformers import SentenceTransformer
 
 from src.config.settings import get_settings
 from src.rag.client import get_qdrant_client
+
+# sentence_transformers is NOT imported at module level — it loads ~250MB of
+# transformer weights. We import it lazily inside __init__ only after confirming
+# Qdrant is reachable, to avoid OOM on memory-constrained deployments.
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +20,9 @@ class AdvisoryRetriever:
 
     def __init__(self):
         self.settings = get_settings()
-        self.client = get_qdrant_client()
+        self.client = get_qdrant_client()  # raises RuntimeError if not reachable
+        # Lazy import: only load sentence-transformers after Qdrant is confirmed live
+        from sentence_transformers import SentenceTransformer  # noqa: PLC0415
         self.model = SentenceTransformer(self.settings.embedding_model)
         self.collection = self.settings.qdrant_collection
 

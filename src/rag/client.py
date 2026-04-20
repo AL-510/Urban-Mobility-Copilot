@@ -1,4 +1,4 @@
-"""Shared Qdrant client factory — tries remote, falls back to local embedded mode."""
+"""Shared Qdrant client factory — remote only, no embedded fallback."""
 
 import logging
 from pathlib import Path
@@ -12,20 +12,36 @@ logger = logging.getLogger(__name__)
 _client: QdrantClient | None = None
 
 
-def get_qdrant_client() -> QdrantClient:
-    """Get or create a Qdrant client.
+def is_qdrant_reachable() -> bool:
+    """Lightweight check: is the remote Qdrant server reachable?
 
-    Strategy:
-    1. Try connecting to remote Qdrant (Docker container)
-    2. Fall back to local embedded mode (no Docker needed)
+    Used before loading sentence-transformers to avoid OOM on memory-constrained
+    deployments (e.g. Render free tier / 512MB) when Qdrant isn't available.
+    """
+    settings = get_settings()
+    try:
+        client = QdrantClient(
+            host=settings.qdrant_host,
+            port=settings.qdrant_port,
+            timeout=3,
+        )
+        client.get_collections()
+        return True
+    except Exception:
+        return False
+
+
+def get_qdrant_client() -> QdrantClient:
+    """Get or create a Qdrant client (remote only — no embedded fallback).
+
+    Raises RuntimeError if the server is not reachable.
+    Call is_qdrant_reachable() first to guard against this.
     """
     global _client
     if _client is not None:
         return _client
 
     settings = get_settings()
-
-    # Try remote first
     try:
         client = QdrantClient(
             host=settings.qdrant_host,
@@ -36,15 +52,8 @@ def get_qdrant_client() -> QdrantClient:
         logger.info(f"Connected to remote Qdrant at {settings.qdrant_host}:{settings.qdrant_port}")
         _client = client
         return _client
-    except Exception:
-        pass
-
-    # Fall back to local embedded mode
-    local_path = str(settings.project_root / settings.vector_store_dir / "qdrant_local")
-    Path(local_path).mkdir(parents=True, exist_ok=True)
-    logger.info(f"Using local Qdrant at {local_path}")
-    _client = QdrantClient(path=local_path)
-    return _client
+    except Exception as e:
+        raise RuntimeError(f"Qdrant not reachable at {settings.qdrant_host}:{settings.qdrant_port}: {e}") from e
 
 
 def reset_client():

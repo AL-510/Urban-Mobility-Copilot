@@ -84,15 +84,24 @@ def _init_services():
     explainer = ExplanationEngine()
 
     # 6. Initialize RAG retriever
+    # Guard with is_qdrant_reachable() BEFORE importing AdvisoryRetriever.
+    # AdvisoryRetriever.__init__ loads sentence-transformers (~250MB) — skipping
+    # this when Qdrant is unavailable prevents OOM on memory-constrained hosts
+    # (e.g. Render free tier with 512MB RAM).
     retriever = None
     try:
-        from src.rag.retriever import AdvisoryRetriever
-        retriever = AdvisoryRetriever()
-        collections = retriever.client.get_collections()
-        has_data = any(c.name == settings.qdrant_collection for c in collections.collections)
-        state["vector_db_status"] = "connected" if has_data else "connected (empty)"
-        set_retriever(retriever)
-        logger.info(f"Vector DB connected, collection exists: {has_data}")
+        from src.rag.client import is_qdrant_reachable
+        if not is_qdrant_reachable():
+            logger.warning("Qdrant not reachable — skipping RAG (sentence-transformers NOT loaded)")
+            state["vector_db_status"] = "disconnected"
+        else:
+            from src.rag.retriever import AdvisoryRetriever
+            retriever = AdvisoryRetriever()
+            collections = retriever.client.get_collections()
+            has_data = any(c.name == settings.qdrant_collection for c in collections.collections)
+            state["vector_db_status"] = "connected" if has_data else "connected (empty)"
+            set_retriever(retriever)
+            logger.info(f"Vector DB connected, collection exists: {has_data}")
     except Exception as e:
         logger.warning(f"Vector DB not available: {e}")
         state["vector_db_status"] = "disconnected"
