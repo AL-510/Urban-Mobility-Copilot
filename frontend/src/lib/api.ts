@@ -5,12 +5,17 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 export async function fetchRoutes(request: RouteRequest): Promise<RouteResponse> {
   let res: Response;
   try {
+    // 120s timeout — allows for Render free-tier cold start (model loading takes ~60s)
     res = await fetch(`${API_URL}/api/v1/routes`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(request),
+      signal: AbortSignal.timeout(120000),
     });
-  } catch (e) {
+  } catch (e: any) {
+    if (e?.name === "TimeoutError" || e?.name === "AbortError") {
+      throw new Error("The backend is taking longer than expected to respond. If this is a fresh deployment, it may still be warming up — please try again in 30 seconds.");
+    }
     throw new Error("Cannot reach the routing server. Check that the backend is running.");
   }
 

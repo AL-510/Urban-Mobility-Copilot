@@ -65,8 +65,10 @@ export default function HomePage() {
       }
     } catch (err: any) {
       const message = err.message || "Failed to fetch routes";
-      if (message.includes("fetch") || message.includes("network") || message.includes("Failed")) {
-        setError("Cannot reach the routing server. Check that the backend is running on port 8000.");
+      if (message.includes("longer than expected") || message.includes("warming up")) {
+        setError(message);
+      } else if (message.includes("fetch") || message.includes("network") || message.includes("Failed")) {
+        setError("Cannot reach the routing server. The backend may still be starting up — please wait 30 seconds and try again.");
       } else {
         setError(message);
       }
@@ -262,6 +264,9 @@ export default function HomePage() {
                 <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
                 <p className="text-slate-500 text-sm">
                   {planningMode === "live" ? "Analyzing live conditions..." : "Forecasting disruption risk..."}
+                </p>
+                <p className="text-slate-400 text-xs mt-2">
+                  First request may take up to 60s while the backend warms up.
                 </p>
               </div>
             </div>

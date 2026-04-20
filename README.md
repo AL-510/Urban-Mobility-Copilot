@@ -4,11 +4,11 @@
 
 A full-stack ML-powered routing application that predicts transportation disruptions using a custom spatio-temporal graph neural network, then recommends optimal routes grounded in real evidence. Routes work globally via OSRM; disruption forecasting is active inside trained regions (Portland, OR as the flagship).
 
+**[Live Demo →](https://urban-mobility-copilot.vercel.app)**
+
 ![Python](https://img.shields.io/badge/Python-3.11+-blue) ![Next.js](https://img.shields.io/badge/Next.js-14-black) ![PyTorch](https://img.shields.io/badge/PyTorch-2.1+-red) ![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-green) ![License](https://img.shields.io/badge/License-MIT-yellow)
 
-<!-- Uncomment after deploying and replace URL:
-![App Screenshot](docs/screenshots/app-overview.png)
--->
+> **Note on first load**: The backend runs on Render's free tier and sleeps after 15 minutes of inactivity. The first request after sleep takes ~60 seconds while the model and graph load. The header will show "Starting…" during this time — subsequent requests are fast.
 
 ---
 
@@ -406,7 +406,7 @@ Recommended for portfolio demo.
    QDRANT_PORT=6333
    LOG_LEVEL=info
    ```
-8. Note your backend URL (e.g., `https://urban-mobility-backend.onrender.com`)
+8. Note your backend URL (e.g., `https://urban-mobility-backend-xct6.onrender.com`)
 
 The `render.yaml` file provides a Blueprint spec for one-click deployment.
 
@@ -415,7 +415,7 @@ The `render.yaml` file provides a Blueprint spec for one-click deployment.
 1. Import GitHub repo on [vercel.com](https://vercel.com)
 2. Root directory: `frontend`
 3. Framework: Next.js (auto-detected)
-4. Environment variable: `NEXT_PUBLIC_API_URL=https://your-backend.onrender.com`
+4. Environment variable: `NEXT_PUBLIC_API_URL=https://urban-mobility-backend-xct6.onrender.com`
 5. Deploy
 
 The `frontend/vercel.json` is pre-configured.
