@@ -4,11 +4,26 @@
 
 A full-stack ML-powered routing application that predicts transportation disruptions using a custom spatio-temporal graph neural network, then recommends optimal routes grounded in real evidence. Routes work globally via OSRM; disruption forecasting is active inside trained regions (Portland, OR as the flagship).
 
-**[Live Demo →](https://urban-mobility-copilot.vercel.app)**
-
 ![Python](https://img.shields.io/badge/Python-3.11+-blue) ![Next.js](https://img.shields.io/badge/Next.js-14-black) ![PyTorch](https://img.shields.io/badge/PyTorch-2.1+-red) ![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-green) ![License](https://img.shields.io/badge/License-MIT-yellow)
 
-> **Note on first load**: The backend runs on Render's free tier and sleeps after 15 minutes of inactivity. The first request after sleep takes ~60 seconds while the model and graph load. The header will show "Starting…" during this time — subsequent requests are fast.
+---
+
+## Results at a Glance
+
+| Metric | Value |
+|---|---|
+| **ST-GAT mean AUROC** (30/60/90-min horizons) | **0.937** |
+| **ST-GAT vs LSTM baseline** (mean AUROC) | 0.937 vs 0.906 (+3.1 points) |
+| **30-min horizon AUROC** (near-term) | 0.9593 |
+| **Delay prediction MAE** | 0.436 minutes |
+| **90th-percentile coverage** (calibration) | 0.903 (target: 0.90) |
+| **Brier score** (probability calibration) | 0.0025 |
+| **Inference latency** (CPU, p50 / p99) | 38.2 ms / 47.9 ms |
+| **Model parameters** | 101,973 |
+| **Transport graph** | 639 nodes, 1,292 edges |
+| **RAG index size** | 23,043 advisory embeddings (Qdrant) |
+
+See [Evaluation Results](#evaluation-results-held-out-test-set) below for the full per-horizon breakdown.
 
 ---
 
@@ -386,52 +401,57 @@ urban-mobility-copilot/
 
 ## Deployment
 
-### Vercel (Frontend) + Render (Backend)
+The repo includes `render.yaml`, `frontend/vercel.json`, `docker/Dockerfile.backend`, `docker/Dockerfile.frontend`, and `docker-compose.yml` — deploy however you prefer.
 
-Recommended for portfolio demo.
+> **Hardware note**: The backend keeps the ST-GAT model, the 639-node graph, and (optionally) the `sentence-transformers` embedding model resident in memory. On hosts with **< 1 GB RAM**, disable RAG (don't set `QDRANT_HOST`) — the app detects unreachable Qdrant and skips loading `sentence-transformers` (~250 MB), keeping startup under ~260 MB. Routing and ML scoring are unaffected; only the RAG evidence panel is empty. A host with ~1 GB RAM comfortably supports the full stack including RAG.
 
-#### Backend on Render
+### Option A: Vercel (Frontend) + Render / Fly.io / Railway (Backend)
 
-1. Push repo to GitHub
-2. New Web Service → connect repo
+#### Backend (any Python-friendly host)
+
+1. Push this repo to GitHub.
+2. Create a new Web Service on your host; point it at the repo (`master` branch).
 3. Build command: `pip install -r requirements.txt`
 4. Start command: `uvicorn src.api.app:app --host 0.0.0.0 --port $PORT`
-5. Python version: 3.11.0
+5. Python version: 3.11
 6. Health check path: `/health`
 7. Environment variables:
    ```
    DEVICE=cpu
    OSRM_BASE_URL=https://router.project-osrm.org
-   QDRANT_HOST=localhost
-   QDRANT_PORT=6333
    LOG_LEVEL=info
+   # If you have a Qdrant instance (optional), set:
+   # QDRANT_HOST=<your-qdrant-host>
+   # QDRANT_PORT=6333
    ```
-8. Note your backend URL (e.g., `https://urban-mobility-backend-xct6.onrender.com`)
+8. Deploy and note the backend URL (e.g., `https://<your-service>.example.com`).
 
-The `render.yaml` file provides a Blueprint spec for one-click deployment.
+The included `render.yaml` is a ready-to-use Blueprint spec for Render.com, but the same build/start commands work on Fly.io, Railway, AWS App Runner, Google Cloud Run, etc.
 
 #### Frontend on Vercel
 
-1. Import GitHub repo on [vercel.com](https://vercel.com)
-2. Root directory: `frontend`
-3. Framework: Next.js (auto-detected)
-4. Environment variable: `NEXT_PUBLIC_API_URL=https://urban-mobility-backend-xct6.onrender.com`
-5. Deploy
+1. Import the GitHub repo on [vercel.com](https://vercel.com).
+2. **Root Directory**: `frontend`
+3. **Framework**: Next.js (auto-detected).
+4. **Environment Variable**: `NEXT_PUBLIC_API_URL=<your backend URL from above>`
+5. Deploy.
 
-The `frontend/vercel.json` is pre-configured.
+The `frontend/vercel.json` is pre-configured. After changing `NEXT_PUBLIC_API_URL`, trigger a redeploy (it's a build-time variable).
 
-#### Qdrant (Optional)
+#### Qdrant (Optional — for RAG evidence panel)
 
-- **Without Qdrant**: Routing and scoring work fully; RAG evidence panel shows "No retrieved evidence"
-- **Qdrant Cloud**: Free cluster at [cloud.qdrant.io](https://cloud.qdrant.io) — set `QDRANT_HOST` and `QDRANT_PORT` in Render env vars
+- **Skip it**: Routing and ML scoring work fully; the RAG evidence panel shows "No retrieved evidence" (graceful degradation).
+- **Qdrant Cloud**: Free cluster at [cloud.qdrant.io](https://cloud.qdrant.io) — set `QDRANT_HOST` and `QDRANT_PORT` in your backend env vars.
 - **Self-hosted**: `docker run -d -p 6333:6333 qdrant/qdrant:latest`
 
-### Docker Compose (Self-Hosted)
+### Option B: Docker Compose (Self-Hosted)
 
 ```bash
 export NEXT_PUBLIC_API_URL=http://your-server:8000
 docker compose up --build -d
 ```
+
+This starts backend (`:8000`), frontend (`:3000`), and Qdrant (`:6333`) together with service-health dependencies.
 
 ### Health Checks
 
@@ -449,7 +469,7 @@ docker compose up --build -d
 3. **Synthetic disruption data** — The simulator generates synthetic incidents. Real-world deployment would require transit agency GTFS-RT feeds.
 4. **Nominatim rate limits** — OSM's geocoding service has a 1 req/s fair-use policy. Handled gracefully with timeouts and fallbacks.
 5. **No authentication** — Portfolio demo, not a multi-tenant service.
-6. **Render free plan cold starts** — Backend sleeps after 15 min of inactivity; first request after sleep takes 30–60s to load the model and graph.
+6. **Memory footprint** — Startup RAM is ~260 MB without RAG and ~510 MB with RAG (sentence-transformers). Free-tier hosts with 512 MB caps should disable Qdrant to stay under the limit (see Hardware note above).
 
 ---
 
